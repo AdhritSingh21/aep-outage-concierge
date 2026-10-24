@@ -6,7 +6,7 @@ evidence panel. Observed / Assumed / Simulated stay separate. No manufactured la
 
 ## Milestones (check when verified and pushed)
 
-- [ ] **M0 — Environment, repo, data access.** Git installed, identity set, venv, scaffold, `.gitignore`, LICENSE,
+- [x] **M0 — Environment, repo, data access.** Git installed, identity set, venv, scaffold, `.gitignore`, LICENSE,
       README skeleton, `data/README.md`, `scripts/prepare_data.py --extract`. Done when the private GitHub repo shows
       the first commit and extraction reproduces `data/extracted/{Data1,Data2,matched_upstream}`.
 - [ ] **M1 — Data layer and joins.** `shapefile_io`, `etl` → parquet, `data/data_report.md`. Done when `pytest -m data`

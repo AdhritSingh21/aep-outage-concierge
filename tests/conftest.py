@@ -12,15 +12,15 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from concierge import config  # noqa: E402
+from concierge import config as cfg  # noqa: E402
 
 
-def pytest_configure(config_):
-    config_.addinivalue_line("markers", "data: needs data/processed built by scripts/prepare_data.py")
+def pytest_configure(config):
+    config.addinivalue_line("markers", "data: needs data/processed built by scripts/prepare_data.py")
 
 
-def pytest_collection_modifyitems(config_, items):
-    if (config.PROCESSED / "customers.parquet").exists():
+def pytest_collection_modifyitems(config, items):
+    if (cfg.PROCESSED / "customers.parquet").exists():
         return
     skip = pytest.mark.skip(reason="processed data not present; run scripts/prepare_data.py")
     for item in items:

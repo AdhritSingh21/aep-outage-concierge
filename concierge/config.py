@@ -45,3 +45,7 @@ PII_FIELDS = ("address", "road_name", "address_nu", "street_cod", "macss_mete", 
 ILM = 4.5
 
 FEET_PER_MILE = 5280.0
+
+# Circuits included in the committed demo bundle (chosen for coverage: heavy damage, zero damage, life-support
+# customers, underground service). Observed circuit ids from the organizer extract.
+DEMO_CIRCUITS = ["0000114", "0000005", "0000026", "0000027", "0000073"]
