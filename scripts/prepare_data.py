@@ -83,34 +83,40 @@ def extract_inner() -> None:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--source", required=True, help="organizer zip (GitHub download) or extracted folder")
+    ap.add_argument("--source", default=None, help="organizer zip (GitHub download) or extracted folder")
     ap.add_argument("--extract-only", action="store_true", help="stop after extracting the archives")
     ap.add_argument("--skip-demo", action="store_true", help="do not rebuild data/demo")
+    ap.add_argument("--derived-only", action="store_true",
+                    help="skip extraction and raw ETL; rebuild zones/exposure/attribution from data/processed")
     args = ap.parse_args(argv)
 
-    source = Path(args.source).expanduser().resolve()
-    if not source.exists():
-        print(f"source not found: {source}", file=sys.stderr)
-        return 2
-    print(f"[1/4] staging organizer package from {source}")
-    pkg = stage_source(source, RAW / "_package")
-    print(f"[2/4] copying raw files into {RAW.relative_to(ROOT)} and extracting nested archives")
-    copy_raw(pkg)
-    extract_inner()
-    if args.extract_only:
-        print("done (extract only)")
-        return 0
-    try:
-        from concierge import etl  # noqa: WPS433 (late import: module appears in M1)
-    except ImportError as exc:  # pragma: no cover - only before M1
-        print(f"ETL module not available yet ({exc}); stopping after extraction")
-        return 0
-    print("[3/4] building processed tables")
-    etl.build_processed(EXTRACTED, RAW / "Install_Labor_HackOHIO.xlsx", ROOT / "data" / "processed",
-                        ROOT / "data" / "data_report.md")
+    from concierge import etl
+
+    processed = ROOT / "data" / "processed"
+    report = ROOT / "data" / "data_report.md"
+    if not args.derived_only:
+        if not args.source:
+            print("--source is required unless --derived-only is given", file=sys.stderr)
+            return 2
+        source = Path(args.source).expanduser().resolve()
+        if not source.exists():
+            print(f"source not found: {source}", file=sys.stderr)
+            return 2
+        print(f"[1/5] staging organizer package from {source}")
+        pkg = stage_source(source, RAW / "_package")
+        print(f"[2/5] copying raw files into {RAW.relative_to(ROOT)} and extracting nested archives")
+        copy_raw(pkg)
+        extract_inner()
+        if args.extract_only:
+            print("done (extract only)")
+            return 0
+        print("[3/5] building processed tables")
+        etl.build_processed(EXTRACTED, RAW / "Install_Labor_HackOHIO.xlsx", processed, report)
+    print("[4/5] deriving zone tree, exposure and damage attribution")
+    etl.build_derived(processed, report)
     if not args.skip_demo:
-        print("[4/4] building demo bundle")
-        etl.build_demo_bundle(ROOT / "data" / "processed", ROOT / "data" / "demo")
+        print("[5/5] building demo bundle")
+        etl.build_demo_bundle(processed, ROOT / "data" / "demo")
     print("done")
     return 0
 

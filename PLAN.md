@@ -9,10 +9,10 @@ evidence panel. Observed / Assumed / Simulated stay separate. No manufactured la
 - [x] **M0 — Environment, repo, data access.** Git installed, identity set, venv, scaffold, `.gitignore`, LICENSE,
       README skeleton, `data/README.md`, `scripts/prepare_data.py --extract`. Done when the private GitHub repo shows
       the first commit and extraction reproduces `data/extracted/{Data1,Data2,matched_upstream}`.
-- [ ] **M1 — Data layer and joins.** `shapefile_io`, `etl` → parquet, `data/data_report.md`. Done when `pytest -m data`
+- [x] **M1 — Data layer and joins.** `shapefile_io`, `etl` → parquet, `data/data_report.md`. Done when `pytest -m data`
       passes: premise→path ≥ 99.9 %, transformer match ≥ 99.9 %, `report_len`/geodesic ratio in 0.95–1.05,
       facilities inside the clip bbox after reprojection.
-- [ ] **M2 — Topology, zones, exposure, damage attribution.** Zone tree per circuit, leaf zone per customer, OH miles
+- [x] **M2 — Topology, zones, exposure, damage attribution.** Zone tree per circuit, leaf zone per customer, OH miles
       and devices per zone, damage → circuit → zone. Done when every pathed customer has exactly one leaf zone, zone
       customers sum to circuit customers for all 110 circuits, zone OH miles sum to circuit OH miles ±1 %, ≥ 99 % of
       damage rows attributed, unmapped rows listed in the report.
