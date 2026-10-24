@@ -102,20 +102,26 @@ def main(argv: list[str] | None = None) -> int:
         if not source.exists():
             print(f"source not found: {source}", file=sys.stderr)
             return 2
-        print(f"[1/5] staging organizer package from {source}")
+        print(f"[1/6] staging organizer package from {source}")
         pkg = stage_source(source, RAW / "_package")
-        print(f"[2/5] copying raw files into {RAW.relative_to(ROOT)} and extracting nested archives")
+        print(f"[2/6] copying raw files into {RAW.relative_to(ROOT)} and extracting nested archives")
         copy_raw(pkg)
         extract_inner()
         if args.extract_only:
             print("done (extract only)")
             return 0
-        print("[3/5] building processed tables")
+        print("[3/6] building processed tables")
         etl.build_processed(EXTRACTED, RAW / "Install_Labor_HackOHIO.xlsx", processed, report)
-    print("[4/5] deriving zone tree, exposure and damage attribution")
+    print("[4/6] deriving zone tree, exposure and damage attribution")
     etl.build_derived(processed, report)
+    print("[5/6] fitting the risk model and writing results/risk_validation.md")
+    from concierge import risk
+    model = risk.build_risk_artifacts(processed, ROOT / "results")
+    v = model.validation
+    print(f"  LOO Spearman {v['loo_spearman_model']} (exposure-only {v['loo_spearman_exposure_only']}), "
+          f"MAE {v['loo_mae_model']} (exposure-only {v['loo_mae_exposure_only']})")
     if not args.skip_demo:
-        print("[5/5] building demo bundle")
+        print("[6/6] building demo bundle")
         etl.build_demo_bundle(processed, ROOT / "data" / "demo")
     print("done")
     return 0

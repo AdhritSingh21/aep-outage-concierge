@@ -46,6 +46,19 @@ ILM = 4.5
 
 FEET_PER_MILE = 5280.0
 
+# Assumed: risk bands on P(outage | storm of the chosen severity)
+RISK_BANDS = [(0.15, "Low"), (0.40, "Moderate"), (0.70, "High"), (1.01, "Very high")]
+# Assumed: storm severity multipliers relative to the Feb-2025 reference event
+SEVERITY_OPTIONS = {
+    "Minor storm (0.5x the Feb-2025 event)": 0.5,
+    "Like the Feb-2025 storm (1x)": 1.0,
+    "Major storm (2x)": 2.0,
+    "Extreme storm (3x)": 3.0,
+}
+# Assumed: confidence rules
+CONFIDENCE_MIN_CIRCUIT_DAMAGE = 10      # reference-storm records on the circuit for "High"
+CONFIDENCE_MIN_POLE_YEAR_KNOWN_PCT = 50
+
 # Circuits included in the committed demo bundle (chosen for coverage: heavy damage, zero damage, life-support
 # customers, underground service). Observed circuit ids from the organizer extract.
 DEMO_CIRCUITS = ["0000114", "0000005", "0000026", "0000027", "0000073"]

@@ -22,6 +22,7 @@ from .topology import lowest_common_ancestor
 
 M_PER_DEG_LAT = 111_320.0
 REF_LAT = 37.2  # Observed: centre latitude of the clip
+LINE_ASSETS = ("primary", "secondary", "Pole")  # wire + pole records count as line damage; the rest is equipment
 
 
 def to_meters(lon, lat):
@@ -316,9 +317,20 @@ def zone_exposure(zones: pd.DataFrame, primary: pd.DataFrame, poles: pd.DataFram
     z["n_transformers_overhead"] = z["zone_id"].map(tx[tx["mounting"] == "Overhead"].groupby("zone_id").size()).fillna(0).astype(int)
     dm = damage[damage["zone_id"].notna()]
     ref = dm[dm["in_reference_storm"]]
+    line = ref["asset_type"].isin(LINE_ASSETS)
     z["n_damage_total"] = z["zone_id"].map(dm.groupby("zone_id").size()).fillna(0).astype(int)
     z["n_damage_ref"] = z["zone_id"].map(ref.groupby("zone_id").size()).fillna(0).astype(int)
+    z["n_damage_ref_line"] = z["zone_id"].map(ref[line].groupby("zone_id").size()).fillna(0).astype(int)
+    z["n_damage_ref_equipment"] = z["n_damage_ref"] - z["n_damage_ref_line"]
     return z
+
+
+def affected_share_reference(customers: pd.DataFrame, damage: pd.DataFrame) -> pd.Series:
+    """Observed: share of pathed customers per circuit with ≥1 reference-storm damage record on their upstream path."""
+    damaged = set(damage.loc[damage["in_reference_storm"] & damage["zone_id"].notna(), "zone_id"])
+    c = customers[customers["has_path"]]
+    hit = c["path_zone_ids"].str.split("|").map(lambda zs: any(z in damaged for z in zs))
+    return hit.groupby(c["circuit_id"]).mean()
 
 
 def circuit_summary(customers: pd.DataFrame, zones: pd.DataFrame, primary: pd.DataFrame, poles: pd.DataFrame,
@@ -348,6 +360,7 @@ def circuit_summary(customers: pd.DataFrame, zones: pd.DataFrame, primary: pd.Da
     c["n_damage_ref_pole"] = c["circuit_id"].map(ref[ref["asset_type"] == "Pole"].groupby("circuit_id").size()).fillna(0).astype(int)
     c["n_damage_ref_equipment"] = c["n_damage_ref"] - c["n_damage_ref_wire"] - c["n_damage_ref_pole"]
     c["access_issue_rate_ref"] = c["circuit_id"].map(ref.groupby("circuit_id")["access_issue"].mean())
+    c["affected_share_ref"] = c["circuit_id"].map(affected_share_reference(customers, damage)).fillna(0.0)
     labels = transformers.groupby("circuit_id").agg(station=("station", lambda s: s.mode().iloc[0] if len(s) else ""),
                                                     cir_label=("cir_label", lambda s: s.mode().iloc[0] if len(s) else ""))
     c = c.merge(labels, left_on="circuit_id", right_index=True, how="left")

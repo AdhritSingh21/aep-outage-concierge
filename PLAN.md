@@ -16,7 +16,7 @@ evidence panel. Observed / Assumed / Simulated stay separate. No manufactured la
       and devices per zone, damage → circuit → zone. Done when every pathed customer has exactly one leaf zone, zone
       customers sum to circuit customers for all 110 circuits, zone OH miles sum to circuit OH miles ±1 %, ≥ 99 % of
       damage rows attributed, unmapped rows listed in the report.
-- [ ] **M3 — Risk model, explanation, confidence, fallback.** Circuit-level Poisson rate model with OH-mile offset,
+- [x] **M3 — Risk model, explanation, confidence, fallback.** Circuit-level Poisson rate model with OH-mile offset,
       path aggregation, bands, factors, confidence, no-path fallback, `results/risk_validation.md`.
 - [ ] **M4 — Priority 1 complete.** `Scenario`, labor bundles (ILM once), FIFO schedule, restoration range with
       repair-vs-service text, alerts, guidance, four messages, dependency chain figure, Streamlit tabs
