@@ -30,7 +30,7 @@ evidence panel. Observed / Assumed / Simulated stay separate. No manufactured la
 - [x] **M6 — Priority 3.** Demo story preset (crews 2→4, access off→on), evidence/results panel, estimate-updated
       message diff. Done when the consistency test proves one `Scenario` change updates schedule, range, explanation
       and message together, and the dependency chain shows a blocking upstream zone in the demo.
-- [ ] **M7 — Submission readiness.** README complete, `ASSUMPTIONS.md`, `data/demo` bundle, fresh-clone smoke test,
+- [x] **M7 — Submission readiness** (done except the two actions that are yours: make the repo public, deploy to Streamlit Community Cloud).** README complete, `ASSUMPTIONS.md`, `data/demo` bundle, fresh-clone smoke test,
       PII/secret scan, optional Streamlit Cloud deploy (ask before making the repo public), logged-out link check.
 
 ## Requirement traceability

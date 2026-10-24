@@ -44,4 +44,5 @@ Thumbs.db
 
 # Scratch
 scratch/
+scratch_*
 *.log
