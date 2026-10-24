@@ -80,6 +80,8 @@ def run(min_records: int, seeds: int, time_budget: float, out: Path, limit: int 
 
 
 def summarize(df: pd.DataFrame, out: Path, time_budget: float) -> str:
+    df = df.copy()
+    df["seed"] = df["seed"].fillna(-1).astype(int)  # Observed sets have no seed; keep them in the group keys
     key = ["circuit_id", "source", "seed", "crews"]
     wide = df.pivot_table(index=key, columns="variant", values="customer_hours").reset_index()
     wide["affected"] = df[df["variant"] == "fifo"].set_index(key)["affected_customers"].reindex(pd.MultiIndex.from_frame(wide[key])).to_numpy()
@@ -116,7 +118,7 @@ def summarize(df: pd.DataFrame, out: Path, time_budget: float) -> str:
     if len(losses):
         lines += ["", "| circuit | source | seed | crews | tasks | our hours | heuristic hours | gap |", "|---|---|---|---|---|---|---|---|"]
         for _, r in losses.head(10).iterrows():
-            lines.append(f"| {r['circuit_id']} | {r['source']} | {r['seed'] if pd.notna(r['seed']) else '—'} | {r['crews']} | {r['n_tasks']} | {r['dependency_aware']:,.0f} | {r['customers_first']:,.0f} | {100 * r['red_vs_customers_first']:+.1f}% |")
+            lines.append(f"| {r['circuit_id']} | {r['source']} | {r['seed'] if r['seed'] >= 0 else '—'} | {r['crews']} | {int(r['n_tasks'])} | {r['dependency_aware']:,.0f} | {r['customers_first']:,.0f} | {100 * r['red_vs_customers_first']:+.1f}% |")
     da = df[df["variant"] == "dependency_aware"]
     small = da.dropna(subset=["gap_pct"])
     lines += ["", "### Solver status", "",
@@ -143,7 +145,11 @@ def summarize(df: pd.DataFrame, out: Path, time_budget: float) -> str:
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots(figsize=(7, 4))
         groups = [100 * wide["red_vs_fifo"], 100 * wide["red_vs_customers_first"], 100 * wide["red_vs_dependency_aware_horn"]]
-        ax.boxplot(groups, labels=["vs FIFO", "vs customers-per-hour", "vs ours without swap pass"], showmeans=True)
+        names = ["vs FIFO", "vs customers-per-hour", "vs ours without swap pass"]
+        try:
+            ax.boxplot(groups, tick_labels=names, showmeans=True)   # matplotlib >= 3.9
+        except TypeError:
+            ax.boxplot(groups, labels=names, showmeans=True)        # older matplotlib
         ax.axhline(0, color="k", lw=0.8)
         ax.set_ylabel("reduction in customer-outage hours (%)")
         ax.set_title(f"Dependency-aware scheduling, {n} instances (Simulated)")
@@ -161,10 +167,14 @@ def main(argv=None) -> int:
     ap.add_argument("--time-budget", type=float, default=0.5, help="swap-pass budget per instance (s)")
     ap.add_argument("--limit", type=int, default=None, help="only the N hardest-hit circuits (for quick runs)")
     ap.add_argument("--out", default=str(ROOT / "results"))
+    ap.add_argument("--summarize-only", action="store_true", help="rebuild the summary and plot from an existing benchmark.csv")
     args = ap.parse_args(argv)
     out = Path(args.out)
-    print("running benchmark…")
-    df = run(args.min_records, args.seeds, args.time_budget, out, args.limit)
+    if args.summarize_only:
+        df = pd.read_csv(out / "benchmark.csv", dtype={"circuit_id": str})
+    else:
+        print("running benchmark…")
+        df = run(args.min_records, args.seeds, args.time_budget, out, args.limit)
     text = summarize(df, out, args.time_budget)
     print(text)
     return 0

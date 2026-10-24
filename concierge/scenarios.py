@@ -91,6 +91,39 @@ class DamageSets:
         tasks = [Task(**{**t.__dict__, "order": int(perm[i])}) for i, t in enumerate(tasks)]
         return tasks
 
+    # -- Demo story
+    def demo_premise(self, top_circuits: int = 8) -> dict | None:
+        """Pick a premise for the demo: on a hard-hit circuit, served from a zone whose own damage is repaired well
+        before service returns (an upstream zone blocks it), so the repair-vs-service distinction is visible."""
+        from .scheduling import solve  # local import avoids a cycle at module load
+
+        best = None
+        circuits = self.data.circuits.sort_values("n_damage_ref", ascending=False).head(top_circuits)
+        for circ in circuits["circuit_id"]:
+            tasks = self.historical(circ)
+            if len(tasks) < 5:
+                continue
+            inst = self.instance(circ, tasks, self.default_crews(circ))
+            res = solve(inst, "dependency_aware", improve=False, reference=False)
+            for g, n, _, blocking in inst.groups:
+                if len(blocking) < 2:
+                    continue
+                local, last = blocking[0], max(blocking, key=lambda z: res.zone_done[z])
+                gap = res.zone_done[last] - res.zone_done[local]
+                if local != last and gap >= 2.0:
+                    score = (gap, n)
+                    if best is None or score > best[0]:
+                        best = (score, circ, g, gap)
+        if best is None:
+            return None
+        _, circ, leaf, gap = best
+        c = self.data.t["customers"]
+        cand = c[(c["leaf_zone_id"] == leaf) & (c["service_kind"] == "Overhead")]
+        if cand.empty:
+            cand = c[c["leaf_zone_id"] == leaf]
+        return {"premise_nu": str(cand.iloc[0]["premise_nu"]), "circuit_id": circ, "leaf_zone_id": leaf,
+                "crews": self.default_crews(circ), "repair_to_service_gap_h": round(float(gap), 1)}
+
     # -- Instance
     def instance(self, circuit_id: str, tasks: list[Task], crews: int, start_delay_h: float = 0.0) -> Instance:
         z = self.data.circuit_zones(circuit_id)

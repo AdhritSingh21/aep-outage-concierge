@@ -23,7 +23,7 @@ evidence panel. Observed / Assumed / Simulated stay separate. No manufactured la
       Outlook / Messages / Why & limits / Data & results, selection by sample premise / ID / circuit / lat-lon.
       Done when the journey runs for the four sample premises, every R1–R5 row below is exercised, scenario changes
       visibly update outputs, no PII renders, the no-path premise shows the Low-confidence fallback.
-- [ ] **M5 — Priority 2.** `customers_first` and `dependency_aware` policies, `SolverStatus`, metrics without
+- [x] **M5 — Priority 2.** `customers_first` and `dependency_aware` policies, `SolverStatus`, metrics without
       double-counting, `scripts/run_benchmark.py` (all circuits with ≥ 3 Feb-2025 records × crews × seeds),
       Operations tab. Done when scheduling tests pass (feasibility, AND semantics, no double counting, toy optimality,
       brute-force parity ≤ 7 tasks, identical inputs across policies) and README reports measured results incl. losses.

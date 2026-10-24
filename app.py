@@ -48,9 +48,24 @@ def main() -> None:
     st.sidebar.title("⚡ Outage Concierge")
     st.sidebar.caption("HackOHI/O 2026 · AEP challenge · " + ("demo bundle" if data.is_demo else "full organizer extract"))
     if st.sidebar.button("Load demo story", help="Hard-hit circuit, customer behind damaged upstream zones; then change crews and access"):
-        demo = config.DEMO_STORY
-        for k, v in demo.items():
+        demo = st.session_state.get("demo_pick") or sets.demo_premise()
+        st.session_state["demo_pick"] = demo
+        for k, v in config.DEMO_STORY.items():
             st.session_state[k] = v
+        if demo:
+            st.session_state["premise_text"] = demo["premise_nu"]
+            st.session_state["crews"] = demo["crews"]
+        st.session_state["demo_step"] = 1
+        st.session_state.pop("journeys", None)
+    if st.session_state.get("demo_step"):
+        demo = st.session_state.get("demo_pick") or {}
+        with st.sidebar.expander("Demo story (3 steps)", expanded=True):
+            st.markdown(f"1. **Baseline** – premise {demo.get('premise_nu', '?')} on circuit {demo.get('circuit_id', '?')} with the Observed "
+                        f"Feb-2025 damage set and {demo.get('crews', '?')} crews. Note the repair-vs-service gap "
+                        f"(~{demo.get('repair_to_service_gap_h', '?')} h) in the chain and the narrative.\n"
+                        f"2. **Double the crews** – the schedule, the range, the chain hours, the explanation and the "
+                        f"*estimate-updated* message all move together.\n"
+                        f"3. **Toggle difficult access** – every task gets the access adder; watch the same four things move the other way.")
     mode = st.sidebar.radio("Identify your location", ["Example premises", "Premise ID", "Circuit", "Map coordinates"], key="mode", horizontal=False)
     premise = None
     if mode == "Example premises":
