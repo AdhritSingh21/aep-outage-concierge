@@ -251,6 +251,15 @@ class RiskResult:
     def percent(self) -> int:
         return int(round(100 * self.probability))
 
+    @property
+    def percent_text(self) -> str:
+        """Never show a false '100%': the model is a probability, not a certainty."""
+        if self.probability > 0.995:
+            return ">99%"
+        if 0 < self.probability < 0.005:
+            return "<1%"
+        return f"{self.percent}%"
+
 
 def _zone_label(row: pd.Series) -> str:
     kind = row["kind"]

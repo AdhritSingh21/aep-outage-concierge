@@ -43,6 +43,12 @@ PII_FIELDS = ("address", "road_name", "address_nu", "street_cod", "macss_mete", 
 
 # Assumed: indirect labor multiplier from the organizer workbook, applied once to all labor hours
 ILM = 4.5
+# Assumed: workbook hours (× ILM) are person-hours; a line crew of this size works a task in parallel
+CREW_SIZE = 4
+# Assumed: default crews per circuit are calibrated so the Feb-2025 damage set clears in about this many clock hours
+# (the observed report→repair gaps were 0–6 days); judges can change the crew count freely
+DEFAULT_CREW_TARGET_HOURS = 72.0
+MIN_CREWS, MAX_CREWS = 1, 30
 
 FEET_PER_MILE = 5280.0
 
@@ -58,6 +64,10 @@ SEVERITY_OPTIONS = {
 # Assumed: confidence rules
 CONFIDENCE_MIN_CIRCUIT_DAMAGE = 10      # reference-storm records on the circuit for "High"
 CONFIDENCE_MIN_POLE_YEAR_KNOWN_PCT = 50
+
+# Demo story preset (sidebar widget keys → values); the premise is chosen at runtime by data.demo_premise()
+DEMO_STORY = {"mode": "Premise ID", "sev": "Like the Feb-2025 storm (1x)", "hours": 12, "access": False,
+              "source": "historical", "labor": 1.0, "delay": 0}
 
 # Circuits included in the committed demo bundle (chosen for coverage: heavy damage, zero damage, life-support
 # customers, underground service). Observed circuit ids from the organizer extract.

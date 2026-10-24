@@ -18,7 +18,7 @@ evidence panel. Observed / Assumed / Simulated stay separate. No manufactured la
       damage rows attributed, unmapped rows listed in the report.
 - [x] **M3 — Risk model, explanation, confidence, fallback.** Circuit-level Poisson rate model with OH-mile offset,
       path aggregation, bands, factors, confidence, no-path fallback, `results/risk_validation.md`.
-- [ ] **M4 — Priority 1 complete.** `Scenario`, labor bundles (ILM once), FIFO schedule, restoration range with
+- [x] **M4 — Priority 1 complete.** `Scenario`, labor bundles (ILM once), FIFO schedule, restoration range with
       repair-vs-service text, alerts, guidance, four messages, dependency chain figure, Streamlit tabs
       Outlook / Messages / Why & limits / Data & results, selection by sample premise / ID / circuit / lat-lon.
       Done when the journey runs for the four sample premises, every R1–R5 row below is exercised, scenario changes
