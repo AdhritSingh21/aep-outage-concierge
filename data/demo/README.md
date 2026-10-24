@@ -1,0 +1,1 @@
+Demo bundle derived from the AEP HackOHI/O 2026 data (https://github.com/hackohio/aep_challenge_hack26) restricted to circuits 0000005, 0000016, 0000018, 0000021, 0000026, 0000027, 0000058, 0000073, 0000114. Anonymized premise IDs only; no address fields. Regenerate with `python scripts/prepare_data.py --source <organizer zip>`.

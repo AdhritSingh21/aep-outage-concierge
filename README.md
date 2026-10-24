@@ -110,6 +110,13 @@ With the default crews the Observed Feb-2025 sets restore the last customer afte
 
 ![benchmark](results/benchmark.png)
 
+## Hosting a demo link
+
+The app runs from the committed `data/demo` bundle, so it can be deployed as-is to Streamlit Community Cloud:
+sign in at https://share.streamlit.io with the GitHub account that owns this (public) repository, choose
+`AdhritSingh21/aep-outage-concierge`, branch `main`, main file `app.py`, and deploy. No secrets or environment
+variables are needed. Locally, `streamlit run app.py` serves the same demo at http://localhost:8501.
+
 ## Limitations
 
 - One reference storm; no per-customer outage records; the probability is a damage-intensity estimate, not a forecast.

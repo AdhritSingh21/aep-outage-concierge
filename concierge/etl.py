@@ -372,10 +372,25 @@ def build_derived(processed: Path, report_path: Path) -> dict:
 # ----------------------------------------------------------------------------- demo bundle
 def build_demo_bundle(processed: Path, demo: Path, circuits: list[str] | None = None) -> None:
     """Copy a subset of circuits (all tables) into data/demo so the app runs without the full extract."""
-    circuits = circuits or config.DEMO_CIRCUITS
     demo.mkdir(parents=True, exist_ok=True)
     tables = {p.stem: pd.read_parquet(p) for p in processed.glob("*.parquet")}
     cust = tables["customers"]
+    if circuits is None:
+        # the configured circuits plus whatever the app's example premises and demo story need
+        circuits = list(config.DEMO_CIRCUITS)
+        try:
+            from .data import DataBundle
+            from .scenarios import DamageSets
+            bundle = DataBundle(processed)
+            for s in bundle.sample_premises():
+                circuits.append(str(bundle.premise(s["premise_nu"])["circuit_id"]))
+            demo_pick = DamageSets(bundle).demo_premise()
+            if demo_pick:
+                circuits.append(demo_pick["circuit_id"])
+        except Exception as exc:  # pragma: no cover - demo bundle still builds from the configured list
+            print(f"  (demo circuit discovery skipped: {exc})")
+        circuits = sorted(set(circuits))
+    print(f"  demo circuits: {circuits}")
     keep_prem = set(cust.loc[cust["circuit_id"].isin(circuits), "premise_nu"])
     prim = tables.get("primary")
     keep_seg = set(prim.loc[prim["circuit_id"].isin(circuits), "seg_idx"]) if prim is not None else set()
@@ -395,4 +410,7 @@ def build_demo_bundle(processed: Path, demo: Path, circuits: list[str] | None = 
         sub.to_parquet(demo / f"{name}.parquet", index=False)
     (demo / "README.md").write_text(
         "Demo bundle derived from the AEP HackOHI/O 2026 data (https://github.com/hackohio/aep_challenge_hack26) "
-        f"restricted to circuits {', '.join(circuits)}. Anonymized premise IDs only; no address fields.\n", encoding="utf8")
+        f"restricted to circuits {', '.join(circuits)}. Anonymized premise IDs only; no address fields. "
+        "Regenerate with `python scripts/prepare_data.py --source <organizer zip>`.\n", encoding="utf8")
+    total_mb = sum(p.stat().st_size for p in demo.glob("*.parquet")) / 1e6
+    print(f"  demo bundle: {len(list(demo.glob('*.parquet')))} tables, {total_mb:.1f} MB")

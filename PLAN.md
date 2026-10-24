@@ -27,7 +27,7 @@ evidence panel. Observed / Assumed / Simulated stay separate. No manufactured la
       double-counting, `scripts/run_benchmark.py` (all circuits with ≥ 3 Feb-2025 records × crews × seeds),
       Operations tab. Done when scheduling tests pass (feasibility, AND semantics, no double counting, toy optimality,
       brute-force parity ≤ 7 tasks, identical inputs across policies) and README reports measured results incl. losses.
-- [ ] **M6 — Priority 3.** Demo story preset (crews 2→4, access off→on), evidence/results panel, estimate-updated
+- [x] **M6 — Priority 3.** Demo story preset (crews 2→4, access off→on), evidence/results panel, estimate-updated
       message diff. Done when the consistency test proves one `Scenario` change updates schedule, range, explanation
       and message together, and the dependency chain shows a blocking upstream zone in the demo.
 - [ ] **M7 — Submission readiness.** README complete, `ASSUMPTIONS.md`, `data/demo` bundle, fresh-clone smoke test,
