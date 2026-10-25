@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  tests:
+    name: Unit tests, demo-bundle tests, headless app start
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run the test suite (data-marked tests skip without the organizer extract)
+        run: python -m pytest -q
+      - name: Streamlit app starts headless on the committed demo bundle
+        run: |
+          python -m streamlit run app.py --server.headless true --server.port 8501 --browser.gatherUsageStats false > streamlit.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8501/_stcore/health > /dev/null; then echo "app is up after ${i} checks"; exit 0; fi
+            sleep 2
+          done
+          echo "app did not come up"; cat streamlit.log; exit 1
