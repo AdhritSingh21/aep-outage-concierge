@@ -1,5 +1,8 @@
 # AEP AI Outage Concierge — HackOHI/O 2026
 
+[![CI](https://github.com/AdhritSingh21/aep-outage-concierge/actions/workflows/ci.yml/badge.svg)](https://github.com/AdhritSingh21/aep-outage-concierge/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 **Live demo:** https://aep-outage-concierge.streamlit.app/ (Streamlit Community Cloud, deployed from `main`, runs on the
 committed demo bundle; first load takes about 10 s if the app was asleep). **Interview one-pager:** [docs/pitch.md](docs/pitch.md).
 **Diagrams:** [docs/diagrams.md](docs/diagrams.md).
@@ -331,4 +334,5 @@ ids only, coordinates rounded, no customer or structure identifiers, facilities 
 
 ## License
 
-MIT for the code (see LICENSE). The challenge data remains the property of AEP / HackOHI/O.
+MIT for the code (see [LICENSE](LICENSE)). The organizer-provided challenge data (AEP / HackOHI/O 2026) is not covered by
+this license and remains the property of AEP / HackOHI/O; see [data/README.md](data/README.md) for its source and attribution.
