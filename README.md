@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 **Live demo:** https://aep-outage-concierge.streamlit.app/ (first load takes about 10 s if the app was asleep) ·
-**Pitch:** [docs/pitch.md](docs/pitch.md) · **Diagrams:** [docs/diagrams.md](docs/diagrams.md) ·
+**Diagrams:** [docs/diagrams.md](docs/diagrams.md) ·
 **Full write-up:** [docs/details.md](docs/details.md) · **Assumptions:** [ASSUMPTIONS.md](ASSUMPTIONS.md)
 
 For one anonymized premise, one screen answers the brief's four questions: **Will I lose power?** (a risk band with its
