@@ -1,16 +1,19 @@
 """Loads the processed (or demo) tables once and serves per-circuit views to the model layer."""
 from __future__ import annotations
 
+import json
+import math
 from functools import lru_cache
 from pathlib import Path
 
 import pandas as pd
 
-from . import config
+from . import config, priority
 from .labor import LaborTable
 from .risk import RiskModel, customer_path_hazard
 
 TABLES = ["customers", "zones", "circuits", "damage", "zone_hazard", "primary", "transformers", "facilities"]
+EXAMPLES_FILE = "examples.json"   # written by scripts/pick_examples.py (script-chosen example premises and demo story)
 
 
 def resolve_data_dir() -> Path:
@@ -19,6 +22,17 @@ def resolve_data_dir() -> Path:
     if (config.DEMO / "zone_hazard.parquet").exists():
         return config.DEMO
     raise FileNotFoundError("No processed or demo data found. Run scripts/prepare_data.py (see data/README.md).")
+
+
+def haversine_km(lon1: float, lat1: float, lon2, lat2):
+    """Great-circle distance in km (vectorised over the second point)."""
+    import numpy as np
+    r = 6371.0088
+    p1, p2 = math.radians(lat1), np.radians(lat2)
+    dphi = np.radians(lat2) - p1
+    dl = np.radians(lon2) - math.radians(lon1)
+    a = np.sin(dphi / 2) ** 2 + math.cos(p1) * np.cos(p2) * np.sin(dl / 2) ** 2
+    return 2 * r * np.arcsin(np.sqrt(a))
 
 
 class DataBundle:
@@ -39,6 +53,24 @@ class DataBundle:
         self.labor = LaborTable.from_processed(self.data_dir)
         self.is_demo = self.data_dir == config.DEMO
         self._path_hazard: pd.Series | None = None
+        self.facility_zone = self._facility_zones()
+        counts = priority.facility_counts(self.t["zones"], self.facility_zone)
+        for col in ("n_facilities_direct", "n_facilities_downstream"):
+            self.zones[col] = counts[col].reindex(self.zones.index).fillna(0).astype(int)
+        self.t["zones"] = self.zones.reset_index(drop=True)
+
+    def _facility_zones(self) -> pd.DataFrame:
+        """Facilities as (kind, circuit, zone) only. A bundle may ship the coordinate-free table already
+        (scripts/map_demo_facilities.py); the full extract still carries coordinates and is mapped here."""
+        fac = self.t.get("facilities")
+        if fac is None or len(fac) == 0:
+            return pd.DataFrame(columns=priority.SAFE_FACILITY_COLUMNS)
+        if "zone_id" in fac.columns:
+            keep = [c for c in priority.SAFE_FACILITY_COLUMNS if c in fac.columns]
+            return fac[keep].copy()
+        if {"lon", "lat"} <= set(fac.columns) and "primary" in self.t:
+            return priority.map_facilities_to_zones(fac, self.t["primary"])
+        return pd.DataFrame(columns=priority.SAFE_FACILITY_COLUMNS)
 
     # -- lookups
     def premise(self, premise_nu: str) -> pd.Series:
@@ -62,6 +94,9 @@ class DataBundle:
             d = d[d["in_reference_storm"]]
         return d.sort_values(["report_date", "damage_id"])
 
+    def circuit_facilities(self, circuit_id: str) -> dict[str, int]:
+        return priority.facility_summary(self.facility_zone, circuit_id)
+
     def circuit_average_hazard(self, circuit_id: str) -> float | None:
         if self._path_hazard is None:
             self._path_hazard = customer_path_hazard(self.t["customers"], self.zone_hazard)
@@ -69,13 +104,59 @@ class DataBundle:
         vals = self._path_hazard.reindex(prem).dropna()
         return float(vals.mean()) if len(vals) else None
 
-    def nearest_premise(self, lon: float, lat: float) -> str:
+    # -- location
+    def bbox(self) -> dict[str, float]:
         c = self.t["customers"]
-        d2 = (c["lon"] - lon) ** 2 + (c["lat"] - lat) ** 2
-        return str(c.loc[d2.idxmin(), "premise_nu"])
+        return {"lon_min": float(c["lon"].min()), "lon_max": float(c["lon"].max()),
+                "lat_min": float(c["lat"].min()), "lat_max": float(c["lat"].max())}
+
+    def nearest_premise(self, lon: float, lat: float) -> str:
+        return self.nearest_premise_with_distance(lon, lat)[0]
+
+    def nearest_premise_with_distance(self, lon: float, lat: float) -> tuple[str, float]:
+        """(anonymized premise id, great-circle distance in km) of the closest customer point."""
+        c = self.t["customers"]
+        d = haversine_km(lon, lat, c["lon"].to_numpy(), c["lat"].to_numpy())
+        i = int(d.argmin())
+        return str(c.iloc[i]["premise_nu"]), float(d[i])
+
+    # -- curated examples (script-chosen when data/<bundle>/examples.json exists)
+    def examples_file(self) -> Path:
+        return self.data_dir / EXAMPLES_FILE
+
+    def load_examples(self) -> dict | None:
+        p = self.examples_file()
+        if not p.exists():
+            return None
+        try:
+            doc = json.loads(p.read_text(encoding="utf8"))
+        except Exception:
+            return None
+        ex = [e for e in doc.get("examples", []) if str(e.get("premise_nu", "")).zfill(9) in self.customers.index]
+        doc["examples"] = ex
+        demo = doc.get("demo")
+        if demo and str(demo.get("premise_nu", "")).zfill(9) not in self.customers.index:
+            doc["demo"] = None
+        return doc
 
     def sample_premises(self) -> list[dict]:
-        """Curated examples covering the journeys the brief asks for (chosen from Observed data, ids anonymized)."""
+        """Curated examples covering the journeys the brief asks for.
+
+        Preferred source: examples.json written by scripts/pick_examples.py (criteria documented there: a premise whose
+        band moves with severity and that is affected in the Feb-2025 set, a life-support account whose wellness-check
+        escalation fires, underground service, a quiet circuit, the no-path fallback). Fallback: simple heuristics on
+        the loaded tables.
+        """
+        doc = self.load_examples()
+        if doc and doc.get("examples"):
+            return [{"premise_nu": str(e["premise_nu"]).zfill(9), "label": str(e["label"])} for e in doc["examples"]]
+        return self._heuristic_examples()
+
+    def demo_story(self) -> dict | None:
+        doc = self.load_examples()
+        return doc.get("demo") if doc else None
+
+    def _heuristic_examples(self) -> list[dict]:
         c = self.t["customers"]
         circ = self.circuits
         picks: list[dict] = []

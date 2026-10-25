@@ -246,15 +246,21 @@ class RiskResult:
     factors: list[dict]
     flags: list[str]
     method: str  # "path" | "circuit_average" | "unavailable"
+    sensitivity: dict = field(default_factory=dict)   # severity multiplier → probability (what moves this risk)
 
     @property
     def percent(self) -> int:
         return int(round(100 * self.probability))
 
     @property
+    def reliable(self) -> bool:
+        """False for the fallback paths: the number is shown as 'being assessed', never sent as a figure (E6)."""
+        return self.method == "path" and self.confidence in ("High", "Medium")
+
+    @property
     def percent_text(self) -> str:
         """Never show a false '100%': the model is a probability, not a certainty."""
-        if self.probability > 0.995:
+        if self.probability >= 0.995:
             return ">99%"
         if 0 < self.probability < 0.005:
             return "<1%"
@@ -279,16 +285,20 @@ def score_customer(cust: pd.Series, zh: pd.DataFrame, circuit: pd.Series, model:
         lam_service = 0.5 * model.rate_service_per_overhead_customer
         flags.append("Service line type unknown; half of the overhead service-line hazard was assumed.")
 
-    if cust.get("has_path", False) and isinstance(cust.get("path_zone_ids"), str):
-        zids = cust["path_zone_ids"].split("|")
-        path = zh.set_index("zone_id").reindex(zids).dropna(subset=["lam_total"])
+    zids = cust["path_zone_ids"].split("|") if cust.get("has_path", False) and isinstance(cust.get("path_zone_ids"), str) else []
+    path = zh.set_index("zone_id").reindex(zids).dropna(subset=["lam_total"]) if zids else zh.iloc[0:0]
+    if len(path):
         lam_path = float(path["lam_total"].sum())
         method = "path"
+        if len(path) < len(zids):
+            flags.append(f"{len(zids) - len(path)} of the {len(zids)} zones on your upstream path are missing from the zone table; "
+                         "the estimate uses the zones on file.")
     elif circuit_avg_hazard is not None and circuit_avg_hazard > 0:
         path = zh.iloc[0:0]
         lam_path = float(circuit_avg_hazard)
         method = "circuit_average"
-        flags.append("No upstream path on file for this premise; the circuit-average exposure was used instead.")
+        flags.append(("The zones on your upstream path are missing from the zone table" if zids else "No upstream path on file for this premise")
+                     + "; the circuit-average exposure was used instead.")
     else:
         return RiskResult(0.0, "Unavailable", "None", severity, 0.0, {}, [],
                           ["No upstream path and no circuit exposure available: a reliable estimate cannot be made."],
@@ -315,7 +325,9 @@ def score_customer(cust: pd.Series, zh: pd.DataFrame, circuit: pd.Series, model:
     else:
         confidence = "Medium"
         if n_ref < config.CONFIDENCE_MIN_CIRCUIT_DAMAGE:
-            flags.append(f"Only {n_ref} damage report(s) on this circuit in the Feb-2025 reference storm; the rate leans on the territory-wide model.")
+            flags.append(("No damage reports on this circuit in the Feb-2025 reference storm" if n_ref == 0 else
+                          f"Only {n_ref} damage report{'s' if n_ref != 1 else ''} on this circuit in the Feb-2025 reference storm")
+                         + "; the rate leans on the territory-wide model.")
         if pole_known < config.CONFIDENCE_MIN_POLE_YEAR_KNOWN_PCT:
             flags.append(f"Pole installation year is known for only {pole_known:.0f}% of poles on this circuit.")
 
@@ -356,7 +368,17 @@ def score_customer(cust: pd.Series, zh: pd.DataFrame, circuit: pd.Series, model:
         factors.append({"name": "Pole age upstream", "share": None,
                         "detail": f"Average known pole installation year upstream ≈ {yr:.0f} (territory average {model.pole_year_reference:.0f})."})
 
-    return RiskResult(p, band_for(p), confidence, severity, hazard, components, factors, flags, method)
+    # the band is decided on the rounded percent so the word and the number on the card never disagree
+    return RiskResult(p, band_for(round(p, 2)), confidence, severity, hazard, components, factors, flags, method)
+
+
+def severity_sensitivity(cust: pd.Series, zh: pd.DataFrame, circuit: pd.Series, model: RiskModel,
+                         circuit_avg_hazard: float | None = None) -> dict[float, float]:
+    """Probability at every configured severity multiplier (what moves this risk)."""
+    out = {}
+    for s in sorted(set(config.SEVERITY_OPTIONS.values())):
+        out[float(s)] = score_customer(cust, zh, circuit, model, float(s), circuit_avg_hazard=circuit_avg_hazard).probability
+    return out
 
 
 # ----------------------------------------------------------------------------- artifacts

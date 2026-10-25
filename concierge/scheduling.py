@@ -60,12 +60,14 @@ class Instance:
     zone_customers_downstream: dict[str, int] = field(default_factory=dict)
     crews: int = 2
     start_delay_h: float = 0.0
+    group_facilities: dict[str, int] = field(default_factory=dict)   # zone → critical facilities (hospital / fire / ambulance) fed from it
+    priority_weight: float = 0.0            # Assumed (L10): extra customers-equivalent weight per life-support customer or facility
 
     def __post_init__(self):
         self.task_by_id = {t.task_id: t for t in self.tasks}
         self.damaged_zones = {t.zone_id for t in self.tasks}
         self.chain: dict[str, list[str]] = {}
-        for z in set(self.parent) | set(self.group_customers) | self.damaged_zones:
+        for z in set(self.parent) | set(self.group_customers) | set(self.group_facilities) | self.damaged_zones:
             self.chain[z] = self._chain(z)
         # customer groups: leaf zone → (n, n_ls, damaged zones on its chain)
         self.groups: list[tuple[str, int, int, tuple[str, ...]]] = []
@@ -74,8 +76,16 @@ class Instance:
                 continue
             blocking = tuple(z for z in self.chain.get(g, [g]) if z in self.damaged_zones)
             self.groups.append((g, int(n), int(self.group_life_support.get(g, 0)), blocking))
+        # critical facilities sit in zones (not necessarily customer groups): facility zone → (n, damaged zones on its chain)
+        self.facility_groups: list[tuple[str, int, tuple[str, ...]]] = []
+        for z, n in self.group_facilities.items():
+            if n <= 0:
+                continue
+            blocking = tuple(x for x in self.chain.get(z, [z]) if x in self.damaged_zones)
+            self.facility_groups.append((z, int(n), blocking))
         self.affected_customers = sum(n for _, n, _, b in self.groups if b)
         self.affected_life_support = sum(ls for _, _, ls, b in self.groups if b)
+        self.affected_facilities = sum(n for _, n, b in self.facility_groups if b)
         self.total_hours = sum(t.hours for t in self.tasks)
         if not self.zone_customers_downstream:
             self.zone_customers_downstream = self._downstream_counts()
@@ -95,12 +105,21 @@ class Instance:
                 down[z] = down.get(z, 0) + n
         return down
 
-    def deepest_damaged_weights(self) -> dict[str, int]:
-        """Customers whose deepest damaged zone (first damaged zone walking upward) is each damaged zone."""
-        w: dict[str, int] = {z: 0 for z in self.damaged_zones}
-        for g, n, _, blocking in self.groups:
+    def deepest_damaged_weights(self) -> dict[str, float]:
+        """Customers whose deepest damaged zone (first damaged zone walking upward) is each damaged zone.
+
+        With ``priority_weight`` > 0 every life-support customer and every critical facility in the group adds that many
+        customers-equivalent to the weight (Assumed L10); with 0 (the default and the benchmark setting) weights are
+        plain customer counts.
+        """
+        w: dict[str, float] = {z: 0 for z in self.damaged_zones}
+        for g, n, ls, blocking in self.groups:
             if blocking:
-                w[blocking[0]] += n
+                w[blocking[0]] += n + self.priority_weight * ls
+        if self.priority_weight:
+            for z, n, blocking in self.facility_groups:
+                if blocking:
+                    w[blocking[0]] += self.priority_weight * n
         return w
 
 
@@ -124,6 +143,8 @@ class Metrics:
     life_support_hours: float
     life_support_t100_h: float
     total_crew_hours: float
+    facility_t100_h: float = 0.0          # last critical facility (hospital / fire / ambulance) back in service
+    affected_facilities: int = 0
 
 
 @dataclass
@@ -203,7 +224,9 @@ def evaluate(inst: Instance, completion: dict[str, float]) -> tuple[dict[str, fl
         t100 = T
     ls_t100 = max((T for T, _, ls in rows if ls > 0), default=0.0)
     makespan = max(completion.values(), default=0.0)
-    m = Metrics(customer_hours, affected, affected, makespan, t50, t90, t100, ls_hours, ls_t100, inst.total_hours)
+    fac_times = [max((zone_done[z] for z in blocking), default=0.0) for _, _, blocking in inst.facility_groups if blocking]
+    m = Metrics(customer_hours, affected, affected, makespan, t50, t90, t100, ls_hours, ls_t100, inst.total_hours,
+                facility_t100_h=max(fac_times, default=0.0), affected_facilities=int(inst.affected_facilities))
     return zone_done, group_restored, m
 
 
@@ -273,12 +296,18 @@ def order_dependency_aware(inst: Instance) -> list[str]:
     return seq[ROOT]
 
 
-def improve_by_swaps(inst: Instance, order: list[str], max_passes: int = 25, time_budget_s: float = 1.0) -> tuple[list[str], int, float]:
-    """Adjacent-swap descent on the exact objective. Returns (order, iterations, improvement fraction)."""
+def improve_by_swaps(inst: Instance, order: list[str], max_passes: int = 25, time_budget_s: float = 1.0,
+                     max_evaluations: int | None = None) -> tuple[list[str], int, float]:
+    """Adjacent-swap descent on the exact objective. Returns (order, iterations, improvement fraction).
+
+    ``max_evaluations`` makes the pass deterministic across machines (the app uses it); ``time_budget_s`` remains a
+    safety ceiling.
+    """
     best = objective(inst, order)
     start_val = best
     t0 = time.perf_counter()
     iters = 0
+    stop = False
     for _ in range(max_passes):
         improved = False
         for i in range(len(order) - 1):
@@ -288,9 +317,10 @@ def improve_by_swaps(inst: Instance, order: list[str], max_passes: int = 25, tim
             iters += 1
             if val < best - 1e-9:
                 order, best, improved = cand, val, True
-            if time.perf_counter() - t0 > time_budget_s:
+            if (max_evaluations is not None and iters >= max_evaluations) or time.perf_counter() - t0 > time_budget_s:
+                stop = True
                 break
-        if not improved or time.perf_counter() - t0 > time_budget_s:
+        if not improved or stop:
             break
     return order, iters, (start_val - best) / start_val if start_val > 0 else 0.0
 
@@ -304,7 +334,8 @@ def brute_force_reference(inst: Instance) -> float | None:
 
 
 # ----------------------------------------------------------------------------- solve
-def solve(inst: Instance, policy: str, improve: bool = True, reference: bool = True, time_budget_s: float = 1.0) -> ScheduleResult:
+def solve(inst: Instance, policy: str, improve: bool = True, reference: bool = True, time_budget_s: float = 1.0,
+          max_evaluations: int | None = None) -> ScheduleResult:
     if policy not in POLICIES:
         raise ValueError(f"unknown policy {policy}")
     t0 = time.perf_counter()
@@ -314,10 +345,14 @@ def solve(inst: Instance, policy: str, improve: bool = True, reference: bool = T
     elif policy == "customers_first":
         order, status.order_source = order_customers_first(inst), "customers downstream ÷ task hours"
     else:
-        order, status.order_source = order_dependency_aware(inst), "Horn tree-merge on damaged-zone tree (weights = customers whose deepest damaged zone is the node)"
+        order = order_dependency_aware(inst)
+        status.order_source = ("Horn tree-merge on damaged-zone tree (weights = customers whose deepest damaged zone is the node"
+                               + (f", plus {inst.priority_weight:g} customers-equivalent per life-support customer or critical facility" if inst.priority_weight else "") + ")")
         if improve and len(order) > 1:
-            order, iters, gain = improve_by_swaps(inst, order, time_budget_s=time_budget_s)
+            order, iters, gain = improve_by_swaps(inst, order, time_budget_s=time_budget_s, max_evaluations=max_evaluations)
             status.improvement_pass, status.improvement_iterations, status.improvement_pct = True, iters, round(100 * gain, 2)
+            if max_evaluations is not None and iters >= max_evaluations:
+                status.notes.append(f"Swap pass stopped at its deterministic cap of {max_evaluations} evaluations (same result on every machine).")
         else:
             status.notes.append("Swap-improvement pass not run for this schedule (Horn ordering only).")
     assignments = list_schedule(inst, order)
@@ -353,5 +388,14 @@ def metrics_table(results: dict[str, ScheduleResult]) -> pd.DataFrame:
                      "avg_hours_per_affected_customer": round(m.customer_hours / m.affected_customers, 1) if m.affected_customers else 0.0,
                      "t50_h": round(m.t50_h, 1), "t90_h": round(m.t90_h, 1),
                      "all_restored_h": round(m.t100_h, 1), "life_support_restored_h": round(m.life_support_t100_h, 1),
+                     "facility_restored_h": round(m.facility_t100_h, 1),
                      "crew_clock_hours": round(m.total_crew_hours, 1)})
     return pd.DataFrame(rows)
+
+
+# Plain-language column names for the metrics table (used by the app)
+METRIC_LABELS = {"policy": "Policy", "customer_outage_hours": "Customer-outage hours", "vs_fifo_pct": "Change vs FIFO (%)",
+                 "affected_customers": "Customers affected", "avg_hours_per_affected_customer": "Avg hours out per affected customer",
+                 "t50_h": "Half of customers back (h)", "t90_h": "90% back (h)", "all_restored_h": "All back (h)",
+                 "life_support_restored_h": "Last life-support customer back (h)", "facility_restored_h": "Last critical facility back (h)",
+                 "crew_clock_hours": "Crew clock hours"}

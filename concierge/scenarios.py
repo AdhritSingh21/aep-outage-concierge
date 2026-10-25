@@ -121,14 +121,26 @@ class DamageSets:
         cand = c[(c["leaf_zone_id"] == leaf) & (c["service_kind"] == "Overhead")]
         if cand.empty:
             cand = c[c["leaf_zone_id"] == leaf]
+        # report the gap from the same schedule the app displays (with the swap-improvement pass and its deterministic cap)
+        crews = self.default_crews(circ)
+        inst = self.instance(circ, self.historical(circ), crews)
+        res = solve(inst, "dependency_aware", improve=True, reference=False, max_evaluations=config.SWAP_EVALUATION_CAP)
+        blocking = [z for z in inst.chain.get(leaf, [leaf]) if z in inst.damaged_zones]
+        if blocking:
+            local, last = blocking[0], max(blocking, key=lambda z: res.zone_done[z])
+            gap = res.zone_done[last] - res.zone_done[local]
         return {"premise_nu": str(cand.iloc[0]["premise_nu"]), "circuit_id": circ, "leaf_zone_id": leaf,
-                "crews": self.default_crews(circ), "repair_to_service_gap_h": round(float(gap), 1)}
+                "crews": crews, "repair_to_service_gap_h": round(float(gap), 1)}
 
     # -- Instance
-    def instance(self, circuit_id: str, tasks: list[Task], crews: int, start_delay_h: float = 0.0) -> Instance:
+    def instance(self, circuit_id: str, tasks: list[Task], crews: int, start_delay_h: float = 0.0,
+                 priority_weight: float = 0.0) -> Instance:
         z = self.data.circuit_zones(circuit_id)
         parent = {zid: (p if isinstance(p, str) else None) for zid, p in zip(z["zone_id"], z["parent_zone_id"])}
         groups = {zid: int(n) for zid, n in zip(z["zone_id"], z["n_customers_direct"]) if n > 0}
         ls = {zid: int(n) for zid, n in zip(z["zone_id"], z["n_life_support_direct"]) if n > 0}
         down = {zid: int(n) for zid, n in zip(z["zone_id"], z["n_customers_downstream"])}
-        return Instance(circuit_id, tasks, parent, groups, ls, down, crews=crews, start_delay_h=start_delay_h)
+        fac = ({zid: int(n) for zid, n in zip(z["zone_id"], z["n_facilities_direct"]) if n > 0}
+               if "n_facilities_direct" in z.columns else {})
+        return Instance(circuit_id, tasks, parent, groups, ls, down, crews=crews, start_delay_h=start_delay_h,
+                        group_facilities=fac, priority_weight=priority_weight)

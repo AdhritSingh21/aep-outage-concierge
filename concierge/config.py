@@ -65,10 +65,20 @@ SEVERITY_OPTIONS = {
 CONFIDENCE_MIN_CIRCUIT_DAMAGE = 10      # reference-storm records on the circuit for "High"
 CONFIDENCE_MIN_POLE_YEAR_KNOWN_PCT = 50
 
-# Demo story preset (sidebar widget keys → values); the premise is chosen at runtime by data.demo_premise()
-DEMO_STORY = {"mode": "Premise ID", "sev": "Like the Feb-2025 storm (1x)", "hours": 12, "access": False,
-              "source": "historical", "labor": 1.0, "delay": 0}
+# Assumed (L9): deterministic cap on the swap-improvement pass used by the app (the benchmark uses a time budget)
+SWAP_EVALUATION_CAP = 1500
+# Assumed (L10): when "prioritize critical loads" is on, each life-support customer or critical facility counts as
+# this many customers-equivalent in the dependency-aware ordering (the objective reported stays customer-outage hours)
+PRIORITY_WEIGHT_CUSTOMERS = 200.0
+# Needs a customer can declare for the session (nothing is inferred); keys used by Scenario.needs
+NEEDS = {"medical": "I rely on powered medical equipment",
+         "mobility": "I have a mobility or accessibility need (help evacuating or reaching a warming/cooling center)",
+         "critical_facility": "I operate a critical facility (clinic, water treatment, shelter)"}
 
-# Circuits included in the committed demo bundle (chosen for coverage: heavy damage, zero damage, life-support
-# customers, underground service). Observed circuit ids from the organizer extract.
+# Demo story preset (sidebar widget keys → values); the premise comes from data/demo/examples.json (scripts/pick_examples.py)
+DEMO_STORY = {"mode": "Premise ID", "sev": "Like the Feb-2025 storm (1x)", "hours": 12, "access": False,
+              "source": "historical", "labor": 1.0, "delay": 0, "needs": [], "opted": True, "priority": False}
+
+# Seed circuits for the demo bundle (etl.build_demo_bundle adds the circuits the example premises and the demo story
+# need, so the committed bundle holds more; data/demo/README.md lists the final set). Observed circuit ids.
 DEMO_CIRCUITS = ["0000114", "0000005", "0000026", "0000027", "0000073"]
