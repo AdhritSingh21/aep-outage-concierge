@@ -1,5 +1,7 @@
 # AEP AI Outage Concierge — HackOHI/O 2026
 
+**Live demo:** https://aep-outage-concierge.streamlit.app/ (Streamlit Community Cloud, runs on the committed demo bundle; first load takes about 10 s if the app was asleep)
+
 A customer-facing assistant for storm outages built on the AEP challenge data. For an anonymized premise it gives an
 **explained outage risk**, a **restoration range** from labor-hour and crew-scheduling simulation, **preparation
 guidance**, **alert eligibility**, and plain-language **messages for the four outage stages** (pre-storm, outage
@@ -112,6 +114,7 @@ With the default crews the Observed Feb-2025 sets restore the last customer afte
 
 ## Hosting a demo link
 
+The public demo is deployed at https://aep-outage-concierge.streamlit.app/ from this repository's `main` branch.
 The app runs from the committed `data/demo` bundle, so it can be deployed as-is to Streamlit Community Cloud:
 sign in at https://share.streamlit.io with the GitHub account that owns this (public) repository, choose
 `AdhritSingh21/aep-outage-concierge`, branch `main`, main file `app.py`, and deploy. No secrets or environment
