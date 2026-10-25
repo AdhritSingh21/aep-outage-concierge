@@ -1,0 +1,48 @@
+# Secrets and environment
+.env
+.env.*
+*.pem
+*.key
+.streamlit/secrets.toml
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Organizer data and generated data (never committed; see data/README.md)
+data/raw/
+data/extracted/
+data/processed/
+*.zip
+*.shp
+*.shx
+*.dbf
+*.prj
+*.sbn
+*.sbx
+*.cpg
+*.shp.xml
+*.parquet
+!data/demo/*.parquet
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Scratch
+scratch/
+scratch_*
+*.log
