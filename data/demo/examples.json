@@ -1,0 +1,139 @@
+{
+ "generated_by": "scripts/pick_examples.py",
+ "bundle": "data/demo",
+ "criteria": {
+  "first": "overhead service, upstream path on file, affected by the Feb-2025 damage set, P(outage) at 1x between 40% and 90% so the severity slider visibly moves the band, largest repair-vs-service gap among candidates on the hardest-hit circuits",
+  "life_support": "declared life-support account (Observed flag), affected by the Feb-2025 set, expected restoration > 8 h at the calibrated crew count so the wellness-check escalation (rule E3) is active, P(outage) not saturated if possible",
+  "underground": "underground service drop on a circuit with Feb-2025 damage, affected if possible",
+  "quiet": "circuit with no Feb-2025 damage reports (territory model carries the estimate)",
+  "fallback": "no upstream path on file (circuit-average fallback, Low confidence, 'being assessed')",
+  "demo": "DamageSets.demo_premise(): hard-hit circuit, customer whose nearest damage is repaired >= 2 h before service returns; steps are the two scenario changes that move the midpoint the most (measured)"
+ },
+ "examples": [
+  {
+   "premise_nu": "035204635",
+   "label": "Overhead service on a hard-hit circuit (0000027); the band moves with the storm slider",
+   "measured": {
+    "p_1x": 0.652,
+    "repair_to_service_gap_h": 0.0,
+    "p_by_severity": {
+     "0.5": 0.41,
+     "1.0": 0.652,
+     "2.0": 0.879,
+     "3.0": 0.958
+    }
+   }
+  },
+  {
+   "premise_nu": "334630102",
+   "label": "Declared life-support account (wellness-check escalation active)",
+   "measured": {
+    "p_1x": 0.995,
+    "most_likely_h_at_default_crews": 20.3
+   }
+  },
+  {
+   "premise_nu": "944922967",
+   "label": "Underground service drop, upstream line damaged in Feb-2025"
+  },
+  {
+   "premise_nu": "773736178",
+   "label": "Circuit with no Feb-2025 damage reports"
+  },
+  {
+   "premise_nu": "272000257",
+   "label": "No upstream path on file (fallback, being assessed)"
+  }
+ ],
+ "demo": {
+  "premise_nu": "918143431",
+  "circuit_id": "0000018",
+  "leaf_zone_id": "F137975500",
+  "crews": 6,
+  "repair_to_service_gap_h": 8.2,
+  "baseline": {
+   "most_likely_h": 10.6,
+   "window": "8 \u2013 16 h",
+   "local_repair_done_h": 2.4,
+   "service_restored_h": 10.6
+  },
+  "variants_measured": [
+   {
+    "key": "crews",
+    "title": "Halve the crews (6 \u2192 3)",
+    "set": {
+     "crews": 3
+    },
+    "most_likely_h": 12.9,
+    "window": "10 \u2013 19 h",
+    "delta_h": 2.3,
+    "update_message": "Our estimate moved 2 h later: now between 10 h and 19 h after crews start (most likely about 13 h), was between 8 h and 16 h after crews start (most likely about 11 h). Why: crews on your circuit changed from 6 to 3."
+   },
+   {
+    "key": "access",
+    "title": "Toggle difficult access (ice / flooding)",
+    "set": {
+     "access_difficulty": true
+    },
+    "most_likely_h": 11.7,
+    "window": "9 \u2013 18 h",
+    "delta_h": 1.1,
+    "update_message": "Small change: now between 9 h and 18 h after crews start (most likely about 12 h), was between 8 h and 16 h after crews start (most likely about 11 h). Why: access conditions worsened (ice / flooding)."
+   },
+   {
+    "key": "labor",
+    "title": "Slower repairs: workbook hours \u00d7 1.5",
+    "set": {
+     "labor_multiplier": 1.5
+    },
+    "most_likely_h": 15.9,
+    "window": "12 \u2013 24 h",
+    "delta_h": 5.3,
+    "update_message": "Our estimate moved 5 h later: now between 12 h and 24 h after crews start (most likely about 16 h), was between 8 h and 16 h after crews start (most likely about 11 h). Why: repairs are assumed to take 1.5\u00d7 the workbook hours instead of 1\u00d7."
+   },
+   {
+    "key": "delay",
+    "title": "Crews released 6 h after the storm",
+    "set": {
+     "crew_start_delay_h": 6.0
+    },
+    "most_likely_h": 16.6,
+    "window": "14 \u2013 22 h",
+    "delta_h": 6.0,
+    "update_message": "Our estimate moved 6 h later: now between 14 h and 22 h after the storm ends (most likely about 17 h), was between 8 h and 16 h after crews start (most likely about 11 h). Why: crews now start 6 h after the storm instead of 0 h."
+   },
+   {
+    "key": "double",
+    "title": "Double the crews (6 \u2192 12)",
+    "set": {
+     "crews": 12
+    },
+    "most_likely_h": 9.7,
+    "window": "7 \u2013 15 h",
+    "delta_h": -0.9,
+    "update_message": "Small change: now between 7 h and 15 h after crews start (most likely about 10 h), was between 8 h and 16 h after crews start (most likely about 11 h). Why: crews on your circuit changed from 6 to 12."
+   }
+  ],
+  "steps": [
+   {
+    "title": "Baseline",
+    "set": {},
+    "expect": "premise 918143431 on circuit 0000018, 6 crews: service back about 11 h (8 \u2013 16 h); the damage nearest you is repaired at 2 h but service returns at 11 h (gap 8.2 h)"
+   },
+   {
+    "title": "Halve the crews (6 \u2192 3)",
+    "set": {
+     "crews": 3
+    },
+    "expect": "most likely moves 11 h \u2192 13 h (+2.3 h); the card, chain, narrative and the estimate-updated message move together"
+   },
+   {
+    "title": "Crews released 6 h after the storm",
+    "set": {
+     "crew_start_delay_h": 6.0
+    },
+    "expect": "most likely moves 11 h \u2192 17 h (+6.0 h); the card, chain, narrative and the estimate-updated message move together"
+   }
+  ]
+ }
+}
