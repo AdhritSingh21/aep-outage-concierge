@@ -1,0 +1,77 @@
+{
+  "intercept": -0.6932072155174265,
+  "coef": {
+    "oh_share": -0.1921799746525321,
+    "lateral_share": -0.23180490403997417,
+    "pole_year_centered": -0.05543801510140085,
+    "pole_year_known": -0.36726199601900533
+  },
+  "feature_mean": {
+    "oh_share": 0.7487892119751409,
+    "lateral_share": 0.6629705258365323,
+    "pole_year_centered": -0.0008424080255540304,
+    "pole_year_known": 0.42940005302027573
+  },
+  "feature_std": {
+    "oh_share": 0.1877317971652534,
+    "lateral_share": 0.21765096825362212,
+    "pole_year_centered": 0.8997071430789184,
+    "pole_year_known": 0.20866005546670913
+  },
+  "pole_year_reference": 2002.7744098587436,
+  "rate_equipment_per_unit": 0.013365956980608407,
+  "rate_service_per_overhead_customer": 0.0014038010613353078,
+  "territory_rate_per_oh_mile": 0.46832651076115506,
+  "territory_median_rate_per_oh_mile": 0.08488647652306325,
+  "alpha": 0.05,
+  "dispersion_line": 0.11908374311295358,
+  "dispersion_equipment": 0.17152535749445183,
+  "mu_floor": 0.02,
+  "reference_storm": "2025-02-12..2025-02-18",
+  "n_circuits_fit": 108,
+  "validation": {
+    "loo_spearman_model": 0.658,
+    "loo_spearman_exposure_only": 0.644,
+    "loo_mae_model": 8.83,
+    "loo_mae_exposure_only": 8.63,
+    "n_circuits": 108,
+    "calibration_quintiles": [
+      {
+        "quintile": 1,
+        "n_circuits": 22,
+        "predicted": 33.188949066364664,
+        "observed": 4.0
+      },
+      {
+        "quintile": 2,
+        "n_circuits": 22,
+        "predicted": 73.40806701668095,
+        "observed": 43.0
+      },
+      {
+        "quintile": 3,
+        "n_circuits": 22,
+        "predicted": 104.16096133522528,
+        "observed": 76.0
+      },
+      {
+        "quintile": 4,
+        "n_circuits": 21,
+        "predicted": 160.14122813909677,
+        "observed": 103.0
+      },
+      {
+        "quintile": 5,
+        "n_circuits": 21,
+        "predicted": 442.6496917083432,
+        "observed": 655.0
+      }
+    ],
+    "equipment_records_ref": 366,
+    "equipment_units": 27383.0,
+    "service_records_ref": 91,
+    "overhead_customers": 64824,
+    "line_records_ref": 881,
+    "oh_miles_fit": 1881.1661944316174
+  }
+}

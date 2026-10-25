@@ -1,0 +1,291 @@
+{
+  "generated_by": "scripts/run_benchmark.py",
+  "source_csv": "results/benchmark.csv",
+  "labels": {
+    "reductions_and_schedules": "Simulated (schedules computed on Observed topology and labor data)",
+    "repair_gap": "Observed (organizer damage records, day granularity)",
+    "runtime": "Measured (wall clock on the machine that ran the benchmark)"
+  },
+  "metric": "customer-outage hours; reduction = 1 - ours / baseline (negative = we lost)",
+  "swap_pass_budget_s": 0.5,
+  "instances": {
+    "n_instances": 306,
+    "n_circuits": 46,
+    "damage_sets_per_circuit": [
+      3
+    ],
+    "observed_sets_per_circuit": [
+      1
+    ],
+    "simulated_sets_per_circuit": [
+      2
+    ],
+    "circuits_by_crew_count_options": {
+      "2": 36,
+      "3": 10
+    },
+    "n_circuits_default_is_one_crew": 36
+  },
+  "all": {
+    "n": 306,
+    "vs_fifo": {
+      "n": 306,
+      "mean_pct": 51.5,
+      "median_pct": 55.8,
+      "weighted_by_affected_pct": 58.0,
+      "win_rate_pct": 100.0,
+      "worst_pct": 0.0,
+      "worst_instance": {
+        "circuit_id": "0000006",
+        "source": "historical",
+        "seed": null,
+        "crews": 1,
+        "n_tasks": 3
+      }
+    },
+    "vs_customers_first": {
+      "n": 306,
+      "mean_pct": 9.6,
+      "median_pct": 7.3,
+      "weighted_by_affected_pct": 9.1,
+      "win_rate_pct": 99.0,
+      "worst_pct": -1.6,
+      "worst_instance": {
+        "circuit_id": "0000041",
+        "source": "simulated",
+        "seed": 0,
+        "crews": 2,
+        "n_tasks": 8
+      }
+    },
+    "vs_dependency_aware_horn": {
+      "n": 306,
+      "mean_pct": 1.4,
+      "median_pct": 0.0,
+      "weighted_by_affected_pct": 1.2,
+      "win_rate_pct": 100.0,
+      "worst_pct": 0.0,
+      "worst_instance": {
+        "circuit_id": "0000003",
+        "source": "historical",
+        "seed": null,
+        "crews": 1,
+        "n_tasks": 23
+      }
+    }
+  },
+  "observed_sets": {
+    "n": 102,
+    "vs_fifo": {
+      "n": 102,
+      "mean_pct": 40.0,
+      "median_pct": 47.8,
+      "weighted_by_affected_pct": 48.2,
+      "win_rate_pct": 100.0,
+      "worst_pct": 0.0,
+      "worst_instance": {
+        "circuit_id": "0000006",
+        "source": "historical",
+        "seed": null,
+        "crews": 1,
+        "n_tasks": 3
+      }
+    },
+    "vs_customers_first": {
+      "n": 102,
+      "mean_pct": 10.0,
+      "median_pct": 8.1,
+      "weighted_by_affected_pct": 10.1,
+      "win_rate_pct": 100.0,
+      "worst_pct": 0.0,
+      "worst_instance": {
+        "circuit_id": "0000024",
+        "source": "historical",
+        "seed": null,
+        "crews": 1,
+        "n_tasks": 10
+      }
+    },
+    "vs_dependency_aware_horn": {
+      "n": 102,
+      "mean_pct": 1.6,
+      "median_pct": 0.0,
+      "weighted_by_affected_pct": 1.1,
+      "win_rate_pct": 100.0,
+      "worst_pct": 0.0,
+      "worst_instance": {
+        "circuit_id": "0000003",
+        "source": "historical",
+        "seed": null,
+        "crews": 1,
+        "n_tasks": 23
+      }
+    }
+  },
+  "simulated_sets": {
+    "n": 204,
+    "vs_fifo": {
+      "n": 204,
+      "mean_pct": 57.2,
+      "median_pct": 61.5,
+      "weighted_by_affected_pct": 60.9,
+      "win_rate_pct": 100.0,
+      "worst_pct": 0.0,
+      "worst_instance": {
+        "circuit_id": "0000091",
+        "source": "simulated",
+        "seed": 1,
+        "crews": 1,
+        "n_tasks": 8
+      }
+    },
+    "vs_customers_first": {
+      "n": 204,
+      "mean_pct": 9.4,
+      "median_pct": 7.1,
+      "weighted_by_affected_pct": 8.9,
+      "win_rate_pct": 99.0,
+      "worst_pct": -1.6,
+      "worst_instance": {
+        "circuit_id": "0000041",
+        "source": "simulated",
+        "seed": 0,
+        "crews": 2,
+        "n_tasks": 8
+      }
+    },
+    "vs_dependency_aware_horn": {
+      "n": 204,
+      "mean_pct": 1.3,
+      "median_pct": 0.0,
+      "weighted_by_affected_pct": 1.2,
+      "win_rate_pct": 100.0,
+      "worst_pct": 0.0,
+      "worst_instance": {
+        "circuit_id": "0000003",
+        "source": "simulated",
+        "seed": 0,
+        "crews": 1,
+        "n_tasks": 25
+      }
+    }
+  },
+  "by_crews": {
+    "one_crew": {
+      "label": "1 crew",
+      "n": 138,
+      "n_circuits": 46,
+      "mean_reduction_vs_fifo_pct": 54.7,
+      "mean_reduction_vs_customers_first_pct": 8.8,
+      "median_reduction_vs_customers_first_pct": 4.6,
+      "win_rate_vs_customers_first_pct": 100.0
+    },
+    "default_all_circuits": {
+      "label": "calibrated default, every circuit",
+      "n": 138,
+      "n_circuits": 46,
+      "mean_reduction_vs_fifo_pct": 53.8,
+      "mean_reduction_vs_customers_first_pct": 8.6,
+      "median_reduction_vs_customers_first_pct": 5.2,
+      "win_rate_vs_customers_first_pct": 100.0
+    },
+    "default_multi_crew_circuits": {
+      "label": "calibrated default, only circuits whose default exceeds 1 crew",
+      "n": 30,
+      "n_circuits": 10,
+      "mean_reduction_vs_fifo_pct": 68.5,
+      "mean_reduction_vs_customers_first_pct": 17.5,
+      "median_reduction_vs_customers_first_pct": 17.7,
+      "win_rate_vs_customers_first_pct": 100.0
+    },
+    "double_default": {
+      "label": "2\u00d7 default",
+      "n": 138,
+      "n_circuits": 46,
+      "mean_reduction_vs_fifo_pct": 44.6,
+      "mean_reduction_vs_customers_first_pct": 8.6,
+      "median_reduction_vs_customers_first_pct": 7.3,
+      "win_rate_vs_customers_first_pct": 98.0
+    },
+    "n_circuits_default_is_one_crew": 36
+  },
+  "losses_vs_customers_first": {
+    "n": 3,
+    "of": 306,
+    "instances": [
+      {
+        "circuit_id": "0000041",
+        "source": "simulated",
+        "seed": 0,
+        "crews": 2,
+        "n_tasks": 8,
+        "our_customer_hours": 28665.5,
+        "heuristic_customer_hours": 28212.5,
+        "gap_pct": -1.61
+      },
+      {
+        "circuit_id": "0000064",
+        "source": "simulated",
+        "seed": 1,
+        "crews": 2,
+        "n_tasks": 11,
+        "our_customer_hours": 15495.0,
+        "heuristic_customer_hours": 15484.3,
+        "gap_pct": -0.07
+      },
+      {
+        "circuit_id": "0000003",
+        "source": "simulated",
+        "seed": 0,
+        "crews": 4,
+        "n_tasks": 25,
+        "our_customer_hours": 7512.8,
+        "heuristic_customer_hours": 7509.4,
+        "gap_pct": -0.04
+      }
+    ]
+  },
+  "swap_pass": {
+    "label": "Simulated gain, Measured runtime",
+    "instances": 306,
+    "mean_gain_pct": 1.39,
+    "max_gain_pct": 20.42,
+    "runtime_mean_s": 0.06,
+    "runtime_max_s": 0.5
+  },
+  "brute_force_reference": {
+    "max_tasks": 7,
+    "instances": 64,
+    "mean_gap_pct": 0.19,
+    "max_gap_pct": 9.15,
+    "at_optimum": 60
+  },
+  "t100_days_observed_sets_at_default": {
+    "default_all_circuits": {
+      "n_circuits": 46,
+      "median": 1.5,
+      "p10": 0.5,
+      "p90": 2.8
+    },
+    "default_multi_crew_circuits": {
+      "n_circuits": 10,
+      "median": 2.7,
+      "p10": 1.8,
+      "p90": 3.0
+    }
+  },
+  "repair_gap_days": {
+    "label": "Observed",
+    "bundle": "demo bundle",
+    "n_circuits_in_bundle": 9,
+    "n_records": 478,
+    "n_reference_storm_records_in_bundle": 496,
+    "window_days": 6,
+    "share_within_window_pct": 99.6,
+    "median_days": 1.0,
+    "p90_days": 4.0,
+    "max_days": 80,
+    "n_negative": 0,
+    "basis": "computed on 478 repaired reference-storm records (2025-02-12 to 2025-02-18) in the loaded bundle (demo bundle: 9 circuits); day-granularity dates"
+  }
+}
